@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+
+    backend:
+        build: ./backend
+        ports:
+        - "8000:8000"
+
+        environment:
+            - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+            - CHROMA_HOST=${CHROMA_HOST}
+            - CHROMA_PORT=${CHROMA_PORT}
+            - GEMINI_API_KEY=${GEMINI_API_KEY}
+
+        depends_on:
+            - db
+            - chroma # Ensure postgres and chroma start before the backend
+
+        volumes:
+            - ./backend:/app
+    
+        restart: unless-stopped   # Restart if crashes
+
+
+    chroma:
+        image: chromadb/chroma:latest
+        ports:
+        - "8001:8000"
+
+        volumes:
+            - chroma_data:/chroma/data
+
+        restart: unless-stopped
+
+    db:
+        image: postgres:14-alpine
+        environment:
+            - POSTGRES_DB=${POSTGRES_DB}
+            - POSTGRES_USER=${POSTGRES_USER}
+            - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+
+        volumes: 
+            - pg_data:/var/lib/postgresql/data
+
+        restart: unless-stopped
+
+    # Define names of volumes for data persistance
+
+volumes:
+    chroma_data:
+    pg_data:
